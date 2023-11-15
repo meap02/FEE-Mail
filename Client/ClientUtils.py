@@ -30,6 +30,10 @@ class ClientUtils:
         #'''
         self.eprint("Logged in as {:s}".format(self.username))
 
+    def disconnect(self):
+        '''Disconnects from the SMTP server'''
+        self.smtp_connection.quit()
+        self.eprint("Disconnected from {:s}:{:d}".format(self.smtp_server, self.smtp_port))
 
     def send_email(self, to_address, subject, body):
         '''Sends an email to the specified address with the specified subject and body'''
@@ -43,7 +47,7 @@ class ClientUtils:
         
     def receive_emails(self):
         '''Receives emails from the server and returns them as a list of EmailMessage objects'''
-        pass
+        return []
 
 if __name__ == "__main__":
     '''
