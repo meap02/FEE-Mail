@@ -5,6 +5,7 @@ import email
 import json
 import sys
 import imaplib
+import re
 
 
 
@@ -36,7 +37,6 @@ class ClientUtils:
         # Setting up IMAP connection to receive emails
         self.inbox = imaplib.IMAP4_SSL(self.smtp_server)
         self.inbox.login(self.username, self.password)
-        self.inbox.select("inbox")
         self.eprint("Connected to IMAP server")
 
 
@@ -44,6 +44,8 @@ class ClientUtils:
         '''Disconnects from the SMTP server'''
         self.smtp_connection.quit()
         self.eprint("Disconnected from {:s}:{:d}".format(self.smtp_server, self.smtp_port))
+        self.inbox.close()
+        self.inbox.logout()
 
     def send_email(self, to_address, subject, body):
         '''Sends an email to the specified address with the specified subject and body'''
@@ -55,19 +57,32 @@ class ClientUtils:
         self.smtp_connection.send_message(msg)
         self.eprint("Sent email to {:s}".format(to_address))
         
-    def receive_emails(self):
+    def receive_new_emails(self):
         '''Receives emails from the server and returns them as a list of EmailMessage objects'''
-        self.inbox.select("inbox")
-        _, data = self.inbox.search(None, "ALL")
+        self.inbox.select("INBOX")
+        emails = []
+        _, data = self.inbox.search(None, "UNSEEN")
         ids = data[0]
         id_list = ids.split()
-        emails = []
         for id in id_list:
             _, data = self.inbox.fetch(id, "(RFC822)")
             raw_email = data[0][1]
             mail = email.message_from_bytes(raw_email)
             emails.append(mail)
+        self.inbox.close()
         return emails
+    
+    def select_mailbox(self, mailbox):
+        '''Selects the specified mailbox'''
+        self.inbox.select(mailbox)
+
+    def list_mailboxes(self):
+        '''Lists all mailboxes'''
+        return [x.decode().split(' "/" ')[-1].replace('"', "") for x in self.inbox.list()[1]]
+    
+    def status(self, mailbox):
+        '''Returns the status of a mailbox, including the total number of messages and the number of unread messages [total, unread]'''
+        return re.findall(r'((?<=MESSAGES\s)\d+|(?<=UNSEEN\s)\d+)', self.inbox.status(mailbox, "(MESSAGES UNSEEN)")[1][0].decode())
 
 if __name__ == "__main__":
     '''
@@ -85,7 +100,9 @@ if __name__ == "__main__":
     '''
     with open("Client/creds.json", "r") as f:
         creds = json.load(f)
-    creds = creds["Kyle"] # Change this to your name during testing
     client = ClientUtils(creds['smtp_server'], creds['smtp_port'], creds['username'], creds['password']) # Creation of the client class
     client.connect()
-    client.receive_emails()
+    for message in client.receive_new_emails():
+        print(message['From'])
+        print(message['Subject'])
+        print(message.get_payload(decode=True).decode())
