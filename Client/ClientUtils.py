@@ -1,8 +1,10 @@
 
 import smtplib
 from email.message import EmailMessage
+import email
 import json
 import sys
+import imaplib
 
 
 
@@ -14,6 +16,7 @@ class ClientUtils:
         self.username = username
         self.password = password
         self.smtp_connection = None
+        self.inbox = None
 
     def eprint(self, *args, **kwargs):
         '''Prints to stderr'''
@@ -29,6 +32,13 @@ class ClientUtils:
         self.smtp_connection.login(self.username, self.password)
         #'''
         self.eprint("Logged in as {:s}".format(self.username))
+
+        # Setting up IMAP connection to receive emails
+        self.inbox = imaplib.IMAP4_SSL(self.smtp_server)
+        self.inbox.login(self.username, self.password)
+        self.inbox.select("inbox")
+        self.eprint("Connected to IMAP server")
+
 
     def disconnect(self):
         '''Disconnects from the SMTP server'''
@@ -47,7 +57,17 @@ class ClientUtils:
         
     def receive_emails(self):
         '''Receives emails from the server and returns them as a list of EmailMessage objects'''
-        return []
+        self.inbox.select("inbox")
+        _, data = self.inbox.search(None, "ALL")
+        ids = data[0]
+        id_list = ids.split()
+        emails = []
+        for id in id_list:
+            _, data = self.inbox.fetch(id, "(RFC822)")
+            raw_email = data[0][1]
+            mail = email.message_from_bytes(raw_email)
+            emails.append(mail)
+        return emails
 
 if __name__ == "__main__":
     '''
@@ -63,9 +83,9 @@ if __name__ == "__main__":
 
     This is for gmail specifically, but the same format can be used for other servers
     '''
-    with open("creds.json", "r") as f:
+    with open("Client/creds.json", "r") as f:
         creds = json.load(f)
     creds = creds["Kyle"] # Change this to your name during testing
     client = ClientUtils(creds['smtp_server'], creds['smtp_port'], creds['username'], creds['password']) # Creation of the client class
     client.connect()
-    client.send_email("kjjust@cpp.edu", "Test Subject", "Test body")
+    client.receive_emails()

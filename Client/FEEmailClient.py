@@ -4,9 +4,10 @@ from ClientUtils import ClientUtils
 import json
 from getpass import getpass
 
+
 class ClientShell(cmd.Cmd):
     intro = 'Welcome to the FEE-Mail client shell. Type help or ? to list commands.\n'
-    prompt = '(FEE-Mail)$'
+    prompt = '(FEE-Mail)$ '
 
     def __init__(self):
         super().__init__()
@@ -31,10 +32,16 @@ class ClientShell(cmd.Cmd):
     def do_send(self, arg):
         'Send an email and be prompted for the to, subject, and body. Usage: send'
         to = input('To: ')
+        if ',' in to:
+            to = to.split(',')
+            to = [address.strip() for address in to]
+        else:
+            to = [to]
         subject = input('Subject: ')
         body = input('Body: ')
-        self.client_utils.send_email(to, subject, body)
-        print('Email sent successfully.')
+        for address in to:
+            self.client_utils.send_email(address, subject, body)
+            print('Email sent successfully to ' + address)
 
     def do_list(self, arg):
         'List all emails. Usage: list'
