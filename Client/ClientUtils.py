@@ -1,4 +1,3 @@
-
 import smtplib
 from email.message import EmailMessage
 import email
@@ -44,22 +43,23 @@ class ClientUtils:
         '''Disconnects from the SMTP server'''
         self.smtp_connection.quit()
         self.eprint("Disconnected from {:s}:{:d}".format(self.smtp_server, self.smtp_port))
-        self.inbox.close()
         self.inbox.logout()
+        self.eprint("Disconnected from IMAP server")
 
     def send_email(self, to_address, subject, body):
         '''Sends an email to the specified address with the specified subject and body'''
         msg = EmailMessage()
         msg.set_content(body)
         msg['Subject'] = subject
-        msg['From'] =  "{:s}@{:s}".format(self.username, self.smtp_server.split(".",1)[1])
+        frm = "{:s}@{:s}".format(self.username, self.smtp_server.split(".",1)[1])
+        msg['From'] =  frm
         msg['To'] = to_address
         self.smtp_connection.send_message(msg)
         self.eprint("Sent email to {:s}".format(to_address))
         
-    def receive_new_emails(self):
+    def get_unread(self, mailbox):
         '''Receives emails from the server and returns them as a list of EmailMessage objects'''
-        self.inbox.select("INBOX")
+        self.inbox.select(mailbox)
         emails = []
         _, data = self.inbox.search(None, "UNSEEN")
         ids = data[0]
@@ -72,9 +72,34 @@ class ClientUtils:
         self.inbox.close()
         return emails
     
+    def get_mail(self, mailbox, num=-10):
+        '''Receives emails from the server and returns them as a list of EmailMessage objects'''
+        self.inbox.select(mailbox)
+        emails = []
+        _, data = self.inbox.search(None, "ALL")
+        ids = data[0]
+        id_list = ids.split()
+        if num > 0:
+            id_list = id_list[-num:]
+        if num < 0:
+            id_list = id_list[:num]
+        for id in id_list:
+            _, data = self.inbox.fetch(id, "(RFC822)")
+            raw_email = data[0][1]
+            mail = email.message_from_bytes(raw_email)
+            emails.append(mail)
+        self.inbox.close()
+        return emails
+    
+
+    
     def select_mailbox(self, mailbox):
         '''Selects the specified mailbox'''
         self.inbox.select(mailbox)
+    
+    def unselect_mailbox(self):
+        '''Unselect the current mailbox'''
+        self.inbox.close()
 
     def list_mailboxes(self):
         '''Lists all mailboxes'''
@@ -102,7 +127,7 @@ if __name__ == "__main__":
         creds = json.load(f)
     client = ClientUtils(creds['smtp_server'], creds['smtp_port'], creds['username'], creds['password']) # Creation of the client class
     client.connect()
-    for message in client.receive_new_emails():
+    for message in client.get_unread():
         print(message['From'])
         print(message['Subject'])
         print(message.get_payload(decode=True).decode())

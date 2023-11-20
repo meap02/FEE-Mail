@@ -14,7 +14,7 @@ class ClientShell(cmd.Cmd):
         creds_exists = input('Do you have a credential file? (y/n) ')
         if creds_exists == 'y':
             while True:
-                creds_file = "C:\\Users\\kjjus\\github\\FEE-Mail\\Client\\creds.json"
+                creds_file = "Client/creds.json"
                 #creds_file = input('Enter credential file path: ')
                 try:
                     with open(creds_file) as f:
@@ -35,8 +35,9 @@ class ClientShell(cmd.Cmd):
             username = input('Enter username (all text before the @ symbol): ')
             password = getpass('Enter password: ')
         self.client_utils = ClientUtils(smtp_server=smtp_server, smtp_port=smtp_port, username=username, password=password)
-        self.selected_mailbox = False
+        self.current_mailbox = None
         self.client_utils.connect()
+
 
     def do_send(self, arg):
         'Send an email and be prompted for the to, subject, and body. Usage: send'
@@ -53,30 +54,71 @@ class ClientShell(cmd.Cmd):
             print('Email sent successfully to ' + address)
 
     def do_unread(self, arg):
-        'List all unread emails in the current mailbox. Usage: list'
-        if self.selected_mailbox:  
-            emails = self.client_utils.receive_new_emails()
+        'List all unread emails in the current mailbox. Usage: unread'
+        if self.current_mailbox: 
+            emails = self.client_utils.get_unread(self.current_mailbox)
             for email in emails:
-                print(f'{email["id"]}: {email["subject"]} ({email["from"]})')
+                print(f'{email["subject"]} ({email["from"]})\n{email["body"]}\n')
+        else:
+            print('Please select a mailbox first')
+
+    def do_list(self, arg):
+        'List messages in the current mailbox. Usage: list OR list <number of messages>'
+        if self.current_mailbox:
+            if arg:
+                arg.strip()
+                try:
+                    num_messages = int(arg)
+                except ValueError:
+                    print('Invalid number of messages')
+                    return
+            else:
+                num_messages = -10
+            emails = self.client_utils.get_mail(self.current_mailbox, num=num_messages)
+            for email in emails:
+                print(f'{email["subject"]} ({email["from"]})\n{email["body"]}\n')
         else:
             print('Please select a mailbox first')
 
     def do_quit(self, arg):
         'Exit the shell. Usage: quit'
         print('Goodbye!')
+        self.client_utils.disconnect()
         return True
     
     def do_select(self, arg):
-        'Select a mailbox. Usage: select'
+        'Select a valid mailbox. Usage: select OR select <mailbox>'
+        mailboxes = self.client_utils.list_mailboxes()
         if arg:
-            self.client_utils.select_mailbox(arg)
+            arg.strip()
+            if arg in mailboxes:
+                self.current_mailbox = arg
+                print(f'Selected mailbox {arg}')
+                self.set_prompt()
+                return
+            else:
+                print('Invalid mailbox')
+        for mailbox in enumerate(mailboxes):
+            if "\\Noselect" not in mailbox:
+                print(str(mailbox[0]) + ") " + mailbox[1])
+        selection = input("Which mailbox would you like to view? (Select a number) ")
+        self.current_mailbox = mailboxes[int(selection)]
+        print(f'Selected mailbox {self.current_mailbox}')
+        self.set_prompt()
+
+    def do_unselect(self, arg):
+        'Unselect a mailbox. Usage: unselect'
+        if self.current_mailbox:
+            self.current_mailbox = None
+            print('Unselected mailbox')
+            self.client_utils.unselect_mailbox()
+            self.set_prompt()
+
+    def set_prompt(self):
+        if self.current_mailbox:
+            ClientShell.prompt = f'(FEE-Mail)-({self.current_mailbox})$ '
         else:
-            for mailbox in enumerate(self.client_utils.list_mailboxes()):
-                if "\\Noselect" not in mailbox:
-                    print(str(mailbox[0]) + ") " + mailbox[1])
-            selection = input("Which mailbox would you like to view? (Select a number) ")
-            self.client_utils.select_mailbox(selection)
-        self.selected_mailbox = True
+            ClientShell.prompt = '(FEE-Mail)$ '
 
 if __name__ == '__main__':
     ClientShell().cmdloop()
