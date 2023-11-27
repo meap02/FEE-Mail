@@ -60,7 +60,7 @@ class ClientShell(cmd.Cmd):
             for email in emails:
                 if email.get_content_maintype() == 'multipart':
                     body = email.get_payload()[0].get_payload()
-                print(f'{email["subject"]}\nFrom:({email["from"].decode()})\n{email["body"]}\n')
+                print(f'{email["subject"]}\nFrom:({email["from"]})\n{email["body"]}\n')
         else:
             print('Please select a mailbox first')
 

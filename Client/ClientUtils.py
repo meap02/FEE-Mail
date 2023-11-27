@@ -4,6 +4,7 @@ import email
 import json
 import sys
 import imaplib
+from redbox import EmailBox
 import re
 
 
@@ -17,6 +18,7 @@ class ClientUtils:
         self.password = password
         self.smtp_connection = None
         self.inbox = None
+        self.selected_mailbox = None
 
     def eprint(self, *args, **kwargs):
         '''Prints to stderr'''
@@ -34,8 +36,7 @@ class ClientUtils:
         self.eprint("Logged in as {:s}".format(self.username))
 
         # Setting up IMAP connection to receive emails
-        self.inbox = imaplib.IMAP4_SSL(self.smtp_server)
-        self.inbox.login(self.username, self.password)
+        self.inbox = EmailBox(host=self.smtp_server,port=self.smtp_port,ssl=True, username=self.username, password=self.password)
         self.eprint("Connected to IMAP server")
 
 
@@ -72,7 +73,7 @@ class ClientUtils:
         self.inbox.close()
         return emails
     
-    def get_mail(self, mailbox, num=-10):
+    def get_mail(self, num=-10):
         '''Receives emails from the server and returns them as a list of EmailMessage objects'''
         self.inbox.select(mailbox)
         emails = []
@@ -88,22 +89,21 @@ class ClientUtils:
             raw_email = data[0][1]
             mail = email.message_from_bytes(raw_email)
             emails.append(mail)
-        self.inbox.close()
         return emails
     
 
     
     def select_mailbox(self, mailbox):
         '''Selects the specified mailbox'''
-        self.inbox.select(mailbox)
+        self.selected_mailbox= self.inbox[mailbox]
     
     def unselect_mailbox(self):
         '''Unselect the current mailbox'''
-        self.inbox.close()
+        self.selected_mailbox = None
 
     def list_mailboxes(self):
         '''Lists all mailboxes'''
-        return [x.decode().split(' "/" ')[-1].replace('"', "") for x in self.inbox.list()[1]]
+        return self.inbox.mailfolders
     
     def status(self, mailbox):
         '''Returns the status of a mailbox, including the total number of messages and the number of unread messages [total, unread]'''
