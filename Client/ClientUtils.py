@@ -4,18 +4,20 @@ import email
 import json
 import sys
 import imaplib
-from redbox import EmailBox
+from redbox import EmailBox, gmail
 import re
 
 
 
 class ClientUtils:
-    def __init__(self, smtp_server, smtp_port, username, password):
+    def __init__(self, smtp_server, smtp_port, imap_server, imap_port, username, password):
         '''Initializes the client utils class with the specified SMTP server, port, username, and password'''
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
         self.username = username
         self.password = password
+        self.imap_server = imap_server
+        self.imap_port = imap_port
         self.smtp_connection = None
         self.inbox = None
         self.selected_mailbox = None
@@ -36,7 +38,8 @@ class ClientUtils:
         self.eprint("Logged in as {:s}".format(self.username))
 
         # Setting up IMAP connection to receive emails
-        self.inbox = EmailBox(host=self.smtp_server,port=self.smtp_port,ssl=True, username=self.username, password=self.password)
+        
+        self.inbox = EmailBox(host=self.imap_server, port=self.imap_port, username=self.username, password=self.password)
         self.eprint("Connected to IMAP server")
 
 
@@ -103,7 +106,10 @@ class ClientUtils:
 
     def list_mailboxes(self):
         '''Lists all mailboxes'''
-        return self.inbox.mailfolders
+        temp = []
+        print(type(self.inbox.mailfolders))
+        for folder in self.inbox.mailfolders:
+            print(folder.name)
     
     def status(self, mailbox):
         '''Returns the status of a mailbox, including the total number of messages and the number of unread messages [total, unread]'''
@@ -125,9 +131,12 @@ if __name__ == "__main__":
     '''
     with open("Client/creds.json", "r") as f:
         creds = json.load(f)
-    client = ClientUtils(creds['smtp_server'], creds['smtp_port'], creds['username'], creds['password']) # Creation of the client class
+    client = ClientUtils(
+        creds['smtp_server'], 
+        creds['smtp_port'], 
+        creds['imap_server'], 
+        creds['imap_port'], 
+        creds['username'], 
+        creds['password']) # Creation of the client class
     client.connect()
-    for message in client.get_unread():
-        print(message['From'])
-        print(message['Subject'])
-        print(message.get_payload(decode=True).decode())
+    print(client.list_mailboxes())

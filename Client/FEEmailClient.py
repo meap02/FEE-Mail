@@ -27,6 +27,8 @@ class ClientShell(cmd.Cmd):
                     print('File not found')
             smtp_server = creds['smtp_server']
             smtp_port = creds['smtp_port']
+            imap_server = creds['imap_server']
+            imap_port = creds['imap_port']
             username = creds['username']
             password = creds['password']
         else:
@@ -34,7 +36,7 @@ class ClientShell(cmd.Cmd):
             smtp_port = int(input('Enter SMTP port: '))
             username = input('Enter username (all text before the @ symbol): ')
             password = getpass('Enter password: ')
-        self.client_utils = ClientUtils(smtp_server=smtp_server, smtp_port=smtp_port, username=username, password=password)
+        self.client_utils = ClientUtils(smtp_server=smtp_server, smtp_port=smtp_port, imap_server=imap_server, imap_port=imap_port, username=username, password=password)
         self.current_mailbox = None
         self.client_utils.connect()
 
