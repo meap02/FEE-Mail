@@ -76,23 +76,24 @@ class ClientUtils:
         self.inbox.close()
         return emails
     
-    def get_mail(self, num=-10):
+    def get_mail(self, filter="ALL"):
         '''Receives emails from the server and returns them as a list of EmailMessage objects'''
-        self.inbox.select(mailbox)
-        emails = []
-        _, data = self.inbox.search(None, "ALL")
-        ids = data[0]
-        id_list = ids.split()
-        if num > 0:
-            id_list = id_list[-num:]
-        if num < 0:
-            id_list = id_list[:num]
-        for id in id_list:
-            _, data = self.inbox.fetch(id, "(RFC822)")
-            raw_email = data[0][1]
-            mail = email.message_from_bytes(raw_email)
-            emails.append(mail)
-        return emails
+        valid_filters = ["ALL", "UNSEEN", "SEEN", "ANSWERED", "UNANSWERED", "DELETED", "UNDELETED", "DRAFT", "UNDRAFT", "FLAGGED", "UNFLAGGED", "RECENT", "OLD", "NEW"]
+        valid_value_filters = ["BEFORE", "ON", "SINCE", "SUBJECT", "BODY", "TEXT", "FROM", "TO", "CC", "BCC"]
+        # Dates to be formatted as dd MMM yyyy HH:mm:ss Z
+        if filter.upper in valid_filters:
+            return self.selected_mailbox.search(filter)
+        else:
+            search_string = ""
+            filetr_list = re.split(r'=|', filter)
+            for i in range(len()):
+                if i == 0:
+                    search_string += filter.split("=")[i]
+                else:
+                    search_string += f' "{filter.split("=")[i]}"'
+            return self.selected_mailbox.search(f"({self.selected_mailbox} {filter}")
+            
+        
     
 
     
@@ -106,10 +107,7 @@ class ClientUtils:
 
     def list_mailboxes(self):
         '''Lists all mailboxes'''
-        temp = []
-        print(type(self.inbox.mailfolders))
-        for folder in self.inbox.mailfolders:
-            print(folder.name)
+        return [x.name for x in self.inbox.mailfolders if "\\Noselect" not in x.flags]
     
     def status(self, mailbox):
         '''Returns the status of a mailbox, including the total number of messages and the number of unread messages [total, unread]'''

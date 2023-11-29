@@ -66,7 +66,7 @@ class ClientShell(cmd.Cmd):
         else:
             print('Please select a mailbox first')
 
-    def do_list(self, arg):
+    def do_recent(self, arg):
         'List messages in the current mailbox. Usage: list OR list <number of messages>'
         if self.current_mailbox:
             if arg:
@@ -106,9 +106,13 @@ class ClientShell(cmd.Cmd):
             if "\\Noselect" not in mailbox:
                 print(str(mailbox[0]) + ") " + mailbox[1])
         selection = input("Which mailbox would you like to view? (Select a number) ")
-        self.current_mailbox = mailboxes[int(selection)]
-        print(f'Selected mailbox {self.current_mailbox}')
-        self.set_prompt()
+        if selection.isdigit():
+            self.current_mailbox = mailboxes[int(selection)]
+            print(f'Selected mailbox {self.current_mailbox}')
+            self.set_prompt()
+        else:
+            print('Invalid selection')
+        
 
     def do_unselect(self, arg):
         'Unselect a mailbox. Usage: unselect'
