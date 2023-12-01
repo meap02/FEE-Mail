@@ -58,31 +58,55 @@ class ClientShell(cmd.Cmd):
     def do_unread(self, arg):
         'List all unread emails in the current mailbox. Usage: unread'
         if self.current_mailbox: 
-            emails = self.client_utils.get_unread(self.current_mailbox)
-            for email in emails:
-                if email.get_content_maintype() == 'multipart':
-                    body = email.get_payload()[0].get_payload()
-                print(f'{email["subject"]}\nFrom:({email["from"]})\n{email["body"]}\n')
+            emails = self.do_get(mailbox=self.current_mailbox, filter='UNSEEN')
+            if len(emails) == 0:
+                print('No unread emails')
+            elif len(emails) >= 10:
+                choice = input(f"There are {len(emails)} unread emails. Would you like to read them? (y/n)")
+                if choice == 'y':
+                    for email in enumerate(emails):
+                        print(f'{email[0]}) {email[1]["subject"]}\tFrom:({email[1]["from"]})')
+                    index = input('Select an email to read (enter a number): ')
+                    if index.isdigit():
+                        index = int(index)
+                        if index < len(emails):
+                            print(f'{emails[index]["subject"]}\nFrom:({emails[index]["from"]})\nCC:({emails[index]["cc"]})\nbCC:({emails[index]["bcc"]})\n{emails[index]["text_body"]}')
+                        else:
+                            print('Invalid index')
+                    else:
+                        print('Invalid index')
+            
         else:
             print('Please select a mailbox first')
 
-    def do_recent(self, arg):
-        'List messages in the current mailbox. Usage: list OR list <number of messages>'
-        if self.current_mailbox:
-            if arg:
-                arg.strip()
-                try:
-                    num_messages = int(arg)
-                except ValueError:
-                    print('Invalid number of messages')
-                    return
-            else:
-                num_messages = -10
-            emails = self.client_utils.get_mail(self.current_mailbox, num=num_messages)
-            for email in emails:
-                print(f'{email["subject"]} ({email["from"]})\n{email["body"]}\n')
-        else:
-            print('Please select a mailbox first')
+    def do_get(self, arg):
+        'Get messages in the current mailbox. Usage: list OR list <number of messages>'
+        
+    def display(self, emails):
+        print("Entering display view, press 'q' to leave display view")
+        if len(emails) == 0:
+                print('No emails')
+        elif len(emails) >= 10:
+            choice = input(f"There are {len(emails)} emails retrived. Would you like to display all of them? (y/n)")
+            if choice == 'y':
+                running = True
+                while running:
+                    for email in enumerate(emails):
+                        print(f'{email[0]}) {email[1]["subject"]}\tFrom:({email[1]["from"]})')
+                    index = input('Select an email to read (enter a number): ')
+                    if index=='q':
+                        running = False
+                        print("Leaving display view")
+                    elif index.isdigit():
+                        index = int(index)
+                        if index < len(emails):
+                            print(f'{emails[index]["subject"]}\nFrom:({emails[index]["from"]})\nCC:({emails[index]["cc"]})\nbCC:({emails[index]["bcc"]})\n{emails[index]["text_body"]}')
+                        else:
+                            print('Invalid index')
+                    else:
+                        print('Invalid index')
+
+
 
     def do_quit(self, arg):
         'Exit the shell. Usage: quit'
@@ -103,17 +127,9 @@ class ClientShell(cmd.Cmd):
             else:
                 print('Invalid mailbox')
         for mailbox in enumerate(mailboxes):
-            if "\\Noselect" not in mailbox:
-                print(str(mailbox[0]) + ") " + mailbox[1])
+            print(str(mailbox[0]) + ") " + mailbox[1])
         selection = input("Which mailbox would you like to view? (Select a number) ")
-        if selection.isdigit():
-            self.current_mailbox = mailboxes[int(selection)]
-            print(f'Selected mailbox {self.current_mailbox}')
-            self.set_prompt()
-        else:
-            print('Invalid selection')
-        
-
+    
     def do_unselect(self, arg):
         'Unselect a mailbox. Usage: unselect'
         if self.current_mailbox:
