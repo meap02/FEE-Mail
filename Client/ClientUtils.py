@@ -27,10 +27,10 @@ class ClientUtils:
     def connect(self):
         '''Connects to the SMTP server and logs in as the user'''
         self.smtp = smtplib.SMTP(self.smtp_server, self.smtp_port) # Establishes the connection to the server with smtplib
-        self.eprint("Connected to {:s}:{:d}".format(self.smtp_server, self.smtp_port)) 
+        self.eprint("Connected to {:s}:{:d}".format(self.smtp_server, self.smtp_port))
         # The following is for testing with Gmail server, will not be used with our server
         #'''
-        self.smtp.starttls() 
+        self.smtp.starttls()
         self.smtp.login(self.username, self.password)
         #'''
         self.eprint("Logged in as {:s}".format(self.username))
@@ -50,7 +50,7 @@ class ClientUtils:
         self.imap.close()
         self.eprint("Disconnected from IMAP server")
 
-    def send_email(self, to_address, subject, body):
+    def send_email(self, to_address, subject, body, cc=None, bcc=None):
         '''Sends an email to the specified address with the specified subject and body'''
         msg = EmailMessage()
         msg.set_content(body)
@@ -58,8 +58,23 @@ class ClientUtils:
         frm = "{:s}@{:s}".format(self.username, self.smtp_server.split(".",1)[1])
         msg['From'] =  frm
         msg['To'] = to_address
+        if cc:
+            msg['CC'] = cc
+        if bcc:
+            msg['BCC'] = bcc
         self.smtp.send_message(msg)
         self.eprint("Sent email to {:s}".format(to_address))
+
+    def reply_email(self, email, body):
+        '''Replies to an email with the specified body'''
+        msg = EmailMessage()
+        msg.set_content(body)
+        msg['Subject'] = "Re: " + email["Subject"]
+        msg['From'] = email["To"]
+        msg['To'] = email["From"]
+        msg['In-Reply-To'] = email["Message-ID"]
+        self.smtp.send_message(msg)
+        self.eprint("Sent email reply to {:s}".format(email["From"]))
         
     
     def get_mail(self, mailbox="INBOX", filter="ALL"):
@@ -95,7 +110,7 @@ class ClientUtils:
                 self.eprint("Invalid filter")
         search_string += ")"
         typ, data = self.imap.search(None, search_string)
-        if typ == 'OK':   
+        if typ == 'OK':
             email_list = []
             for num in data[0].split():
                 typ, data = self.imap.fetch(num, '(RFC822)')
@@ -103,19 +118,14 @@ class ClientUtils:
                     email_list.append(email.message_from_bytes(data[0][1]))
                 else:
                     self.eprint(f"Error fetching mail {num}")
-            return email_list
         else:
             self.eprint(f"Error searching for mailbox for {filter} with error code {typ}")
-            
+        return email_list
+
 
     def list_mailboxes(self):
         '''Lists all mailboxes'''
         return [x.decode().split(' "/" ')[-1].replace('"', "") for x in self.imap.list()[1]]
-    
-    
-    def status(self, mailbox):
-        '''Returns the status of a mailbox, including the total number of messages and the number of unread messages [total, unread]'''
-        return re.findall(r'((?<=MESSAGES\s)\d+|(?<=UNSEEN\s)\d+)', self.imap.status(mailbox, "(MESSAGES UNSEEN)")[1][0].decode())
 
 if __name__ == "__main__":
     '''
