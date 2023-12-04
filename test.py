@@ -1,1 +1,0 @@
-print("Hurry=20in=20For=200=25=20APR=20During=20Our=20Hyundai=20Getaway=20Sales=20Event=21".decode("utf-8"))

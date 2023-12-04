@@ -67,7 +67,7 @@ class ClientUtils:
         msg = EmailMessage()
         msg.set_content(body) # Setting the body of the email
         msg['Subject'] = subject # Setting the subject of the email
-        frm = f"{self.username}@{self.smtp_server.split(".",1)[1]}" # Setting the from address of the email
+        frm = f"{self.username}@{self.smtp_server.split('.',1)[1]}" # Setting the from address of the email
         msg['From'] =  frm
         msg['To'] = to_address # Setting the to address of the email
         if cc: # Setting the cc address of the email if it exists
