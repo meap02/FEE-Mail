@@ -26,8 +26,9 @@ def printBody():
     to_address.set("")
 
 
-
-cu = ClientUtils(smtp_server=smtp_server, smtp_port=smtp_port, username=username, password=password)
+with open("Client/creds.json", "r") as f:
+    creds = json.load(f)
+    cu = ClientUtils(creds['smtp_server'], creds['smtp_port'], creds['username'], creds['password']) # Creation of the client class
 cu.connect()
 toAddressLabel = Label(m, text='Send To:').place(x=0,y=10)
 toAddressEntry = Entry(m,textvariable=to_address).place(x=60,y=10)

@@ -63,9 +63,8 @@ if __name__ == "__main__":
 
     This is for gmail specifically, but the same format can be used for other servers
     '''
-    with open("creds.json", "r") as f:
+    with open("Client/creds.json", "r") as f:
         creds = json.load(f)
-    creds = creds["Kyle"] # Change this to your name during testing
     client = ClientUtils(creds['smtp_server'], creds['smtp_port'], creds['username'], creds['password']) # Creation of the client class
     client.connect()
     client.send_email("kjjust@cpp.edu", "Test Subject", "Test body")
