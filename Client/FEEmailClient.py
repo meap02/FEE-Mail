@@ -40,6 +40,8 @@ class ClientShell(cmd.Cmd):
         self.current_mailbox = None
         self.client_utils.connect()
 
+    def pause(self):
+        programPause = input("Press the <ENTER> key to continue...")
 
     def do_send(self, arg):
         'Send an email and be prompted for the to, subject, and body. Usage: send'
@@ -55,59 +57,37 @@ class ClientShell(cmd.Cmd):
             self.client_utils.send_mail(address, subject, body)
             print('Email sent successfully to ' + address)
 
-    def do_unread(self, arg):
-        'List all unread emails in the current mailbox. Usage: unread'
-        if self.current_mailbox: 
-            emails = self.do_get(mailbox=self.current_mailbox, filter='UNSEEN')
-            if len(emails) == 0:
-                print('No unread emails')
-            elif len(emails) >= 10:
-                choice = input(f"There are {len(emails)} unread emails. Would you like to read them? (y/n)")
-                if choice == 'y':
-                    for email in enumerate(emails):
-                        print(f'{email[0]}) {email[1]["subject"]}\tFrom:({email[1]["from"]})')
-                    index = input('Select an email to read (enter a number): ')
-                    if index.isdigit():
-                        index = int(index)
-                        if index < len(emails):
-                            print(f'{emails[index]["subject"]}\nFrom:({emails[index]["from"]})\nCC:({emails[index]["cc"]})\nbCC:({emails[index]["bcc"]})\n{emails[index]["text_body"]}')
-                        else:
-                            print('Invalid index')
-                    else:
-                        print('Invalid index')
-            
-        else:
-            print('Please select a mailbox first')
-
     def do_get(self, arg):
         'Get messages in the current mailbox. Usage: get <filters>'
         self.display(self.client_utils.get_mail(mailbox=self.current_mailbox, filter=arg))
-        
+
     def display(self, emails):
+        running = True
         if len(emails) == 0:
                 print('No emails')
-        elif len(emails) > 10:        
-            print("Entering display view, press 'q' to leave display view")
+        elif len(emails) > 10:
             choice = input(f"There are {len(emails)} emails retrived. Would you like to display all of them? (y/n)")
-            if choice == 'y':
-                running = True
-                while running:
-                    for email in enumerate(emails):
-                        print(f'{email[0]}) {email[1]["subject"]}\tFrom:({email[1]["from"]})')
-                    index = input('Select an email to read (enter a number): ')
-                    if index=='q':
-                        running = False
-                        print("Leaving display view")
-                    elif index.isdigit():
-                        index = int(index)
-                        if index < len(emails):
-                            print(f'{emails[index]["subject"]}\nFrom:({emails[index]["from"]})\nCC:({emails[index]["cc"]})\nbCC:({emails[index]["bcc"]})\n{emails[index]["text_body"]}')
-                        else:
-                            print('Invalid index')
+        else:
+            choice = 'y'
+        if choice == 'y':
+            print("Entering display view, press 'q' to leave display view")
+            while running:
+                for email in enumerate(emails, 1):
+                    print(f'{email[0]}) {email[1]["subject"]}\tFrom:({email[1]["from"]})')
+                index = input('Select an email to read (enter a number): ')
+                if index=='q':
+                    running = False
+                    print("Leaving display view")
+                elif index.isdigit():
+                    index = int(index)
+                    if index < len(emails):
+                        print(emails[index].__dict__.keys())
+                        print(f'{emails[index]["subject"]}\nFrom:({emails[index]["from"]})\nCC:({emails[index]["cc"]})\nbCC:({emails[index]["bcc"]})\n{emails[index].get_payload()}')
+                        self.pause()
                     else:
                         print('Invalid index')
-            else:
-                print("Leaving display view")
+                else:
+                    print('Invalid index')
 
 
 
@@ -129,7 +109,7 @@ class ClientShell(cmd.Cmd):
                 return
             else:
                 print('Invalid mailbox')
-        for mailbox in enumerate(mailboxes):
+        for mailbox in enumerate(mailboxes, 1):
             print(str(mailbox[0]) + ") " + mailbox[1])
         selection = input("Which mailbox would you like to view? (Select a number) ")
         if selection.isdigit():
