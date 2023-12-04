@@ -52,7 +52,7 @@ class ClientShell(cmd.Cmd):
         subject = input('Subject: ')
         body = input('Body: ')
         for address in to:
-            self.client_utils.send_email(address, subject, body)
+            self.client_utils.send_mail(address, subject, body)
             print('Email sent successfully to ' + address)
 
     def do_unread(self, arg):
@@ -80,13 +80,14 @@ class ClientShell(cmd.Cmd):
             print('Please select a mailbox first')
 
     def do_get(self, arg):
-        'Get messages in the current mailbox. Usage: list OR list <number of messages>'
+        'Get messages in the current mailbox. Usage: get <filters>'
+        self.display(self.client_utils.get_mail(mailbox=self.current_mailbox, filter=arg))
         
     def display(self, emails):
-        print("Entering display view, press 'q' to leave display view")
         if len(emails) == 0:
                 print('No emails')
-        elif len(emails) >= 10:
+        elif len(emails) > 10:        
+            print("Entering display view, press 'q' to leave display view")
             choice = input(f"There are {len(emails)} emails retrived. Would you like to display all of them? (y/n)")
             if choice == 'y':
                 running = True
@@ -105,6 +106,8 @@ class ClientShell(cmd.Cmd):
                             print('Invalid index')
                     else:
                         print('Invalid index')
+            else:
+                print("Leaving display view")
 
 
 
@@ -129,14 +132,25 @@ class ClientShell(cmd.Cmd):
         for mailbox in enumerate(mailboxes):
             print(str(mailbox[0]) + ") " + mailbox[1])
         selection = input("Which mailbox would you like to view? (Select a number) ")
+        if selection.isdigit():
+            selection = int(selection)
+            if selection < len(mailboxes):
+                self.current_mailbox = mailboxes[selection]
+                print(f'Selected mailbox {self.current_mailbox}')
+                self.set_prompt()
+            else:
+                print('Invalid index')
+        else:
+            print('Invalid index')
     
     def do_unselect(self, arg):
         'Unselect a mailbox. Usage: unselect'
         if self.current_mailbox:
             self.current_mailbox = None
             print('Unselected mailbox')
-            self.client_utils.unselect_mailbox()
             self.set_prompt()
+        else:
+            print('No mailbox selected')
 
     def set_prompt(self):
         if self.current_mailbox:

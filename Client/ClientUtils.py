@@ -45,12 +45,15 @@ class ClientUtils:
     def disconnect(self):
         '''Disconnects from the SMTP server'''
         self.smtp.quit()
-        self.eprint("Disconnected from {:s}:{:d}".format(self.smtp_server, self.smtp_port))
+        self.eprint(f"Disconnected from SMTP server {self.smtp_server}:{self.smtp_port}")
+        try:
+            self.imap.close()
+        except:
+            pass
         self.imap.logout()
-        self.imap.close()
-        self.eprint("Disconnected from IMAP server")
+        self.eprint(f"Disconnected from IMAP server {self.imap_server}:{self.imap_port}")
 
-    def send_email(self, to_address, subject, body, cc=None, bcc=None):
+    def send_mail(self, to_address, subject, body, cc=None, bcc=None):
         '''Sends an email to the specified address with the specified subject and body'''
         msg = EmailMessage()
         msg.set_content(body)
@@ -65,50 +68,61 @@ class ClientUtils:
         self.smtp.send_message(msg)
         self.eprint("Sent email to {:s}".format(to_address))
 
-    def reply_email(self, email, body):
+    def reply_mail(self, email, body):
         '''Replies to an email with the specified body'''
         msg = EmailMessage()
         msg.set_content(body)
         msg['Subject'] = "Re: " + email["Subject"]
         msg['From'] = email["To"]
         msg['To'] = email["From"]
+        msg['CC'] = email["CC"]
         msg['In-Reply-To'] = email["Message-ID"]
         self.smtp.send_message(msg)
         self.eprint("Sent email reply to {:s}".format(email["From"]))
         
     
-    def get_mail(self, mailbox="INBOX", filter="ALL"):
-        '''Receives emails from the server and returns them as a list of EmailMessage objects'''
+    def get_mail(self, mailbox="INBOX", filter="UNSEEN"):
+        '''Receives emails from the server and returns them as a list of EmailMessage objects
+        filter is a string that can be used to filter the emails received. It is formatted as follows:
+        "FILTER1 FILTER2 FILTER3"  "FILTER4=VALUE1 FILTER5=VALUE2"
+        Valid filters are: ALL, UNSEEN, SEEN, ANSWERED, UNANSWERED, DELETED, UNDELETED, DRAFT, UNDRAFT, FLAGGED, UNFLAGGED, RECENT, OLD, NEW
+        Valid value filters are: BEFORE, ON, SINCE, SUBJECT, BODY, TEXT, FROM, TO, CC, BCC'''
         valid_filters = ["ALL", "UNSEEN", "SEEN", "ANSWERED", "UNANSWERED", "DELETED", "UNDELETED", "DRAFT", "UNDRAFT", "FLAGGED", "UNFLAGGED", "RECENT", "OLD", "NEW"]
         valid_value_filters = ["BEFORE", "ON", "SINCE", "SUBJECT", "BODY", "TEXT", "FROM", "TO", "CC", "BCC"]
         # Dates to be formatted as dd MMM yyyy HH:mm:ss Z
         self.imap.select(mailbox)
         search_string = "(ALL "
         filter_list = re.split(r'\s(?=(?:[^\'\"`]*([\'\"`])[^\'\"`]*\1)*[^\'\"`]*$)', filter)
+        print(filter_list)
         for i in range(len(filter_list)-1):
             if '=' in filter_list[i]:
                 filter_list[i] = filter_list[i].split('=')
+                filter_list[i][0] = filter_list[i][0].upper()
                 if filter_list[i][0] in valid_value_filters:
                     search_string += f"({filter_list[i][0]} {filter_list[i][1]}) "
                 else:
                     self.eprint("Invalid filter")
             else:
+                filter_list[i] = filter_list[i].upper()
                 if filter_list[i] in valid_filters:
                     search_string += f"({filter_list[i]}) "
                 else:
                     self.eprint("Invalid filter")
         if '=' in filter_list[-1]:
                 filter_list[-1] = filter_list[-1].split('=')
+                filter_list[-1][0] = filter_list[-1][0].upper()
                 if filter_list[-1][0] in valid_value_filters:
                     search_string += f"({filter_list[-1][0]} {filter_list[-1][1]})"
                 else:
                     self.eprint("Invalid filter")
         else:
+            filter_list[-1] = filter_list[-1].upper()
             if filter_list[-1] in valid_filters:
                 search_string += f"({filter_list[-1]})"
             else:
                 self.eprint("Invalid filter")
         search_string += ")"
+        print(search_string)
         typ, data = self.imap.search(None, search_string)
         if typ == 'OK':
             email_list = []
