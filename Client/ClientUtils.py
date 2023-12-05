@@ -165,15 +165,13 @@ class ClientUtils:
 
     '''
     The layout for creds.json is as follows:
-    {
-        "FirstName": {
-            "smtp_server": "smtp.gmail.com",
-            "smtp_port": 587,
-            "imap_server": "imap.gmail.com",
-            "imap_port": "993"
-            "username": "
-            "password": "
-        }
+   {
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "imap_server": "imap.gmail.com",
+        "imap_port": "993",
+        "username": "
+        "password": "
     }
 
     This is for gmail specifically, but the same format can be used for other servers
