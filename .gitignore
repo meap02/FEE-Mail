@@ -1,2 +1,2 @@
-creds.json
+*.json
 __pycache__/
