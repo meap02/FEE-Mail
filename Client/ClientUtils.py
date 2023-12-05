@@ -163,13 +163,14 @@ class ClientUtils:
         '''Lists all mailboxes'''
         return [x.decode().split(' "/" ')[-1].replace('"', "") for x in self.imap.list()[1] if "\\Noselect" not in x.decode()]
 
-if __name__ == "__main__":
     '''
     The layout for creds.json is as follows:
     {
         "FirstName": {
             "smtp_server": "smtp.gmail.com",
             "smtp_port": 587,
+            "imap_server": "imap.gmail.com",
+            "imap_port": "993"
             "username": "
             "password": "
         }
@@ -177,14 +178,3 @@ if __name__ == "__main__":
 
     This is for gmail specifically, but the same format can be used for other servers
     '''
-    with open("Client/creds.json", "r") as f:
-        creds = json.load(f)
-    client = ClientUtils(
-        creds['smtp_server'], 
-        creds['smtp_port'], 
-        creds['imap_server'], 
-        creds['imap_port'], 
-        creds['username'], 
-        creds['password']) # Creation of the client class
-    client.connect()
-    print([str(x["Subject"]) for x in client.get_mail(filter= 'SUBJECT="September"', mailbox="Patreon")])
