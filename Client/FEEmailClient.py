@@ -33,9 +33,16 @@ class ClientShell(cmd.Cmd):
             password = creds['password']
         else:
             smtp_server = input('Enter SMTP server: ')
-            smtp_port = int(input('Enter SMTP port: '))
+            smtp_port = input('Enter SMTP port: ')
+            if smtp_port != '':
+                smtp_port = int(smtp_port)
+            imap_server = input('Enter IMAP server: ')
+            imap_port = input('Enter IMAP port: ')
+            if imap_port != '':
+                imap_port = int(imap_port)
             username = input('Enter username (all text before the @ symbol): ')
             password = getpass('Enter password: ')
+
         self.client_utils = ClientUtils(smtp_server=smtp_server, smtp_port=smtp_port, imap_server=imap_server, imap_port=imap_port, username=username, password=password)
         self.current_mailbox = None
         self.client_utils.connect()
