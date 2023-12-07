@@ -70,6 +70,7 @@ class ClientShell(cmd.Cmd):
 
     def display(self, emails):
         running = True
+        choice = ''
         if len(emails) == 0:
                 print('No emails')
         elif len(emails) > 10:
@@ -122,7 +123,7 @@ class ClientShell(cmd.Cmd):
         if selection.isdigit():
             selection = int(selection)
             if selection < len(mailboxes):
-                self.current_mailbox = mailboxes[selection]
+                self.current_mailbox = mailboxes[selection+1]
                 print(f'Selected mailbox {self.current_mailbox}')
                 self.set_prompt()
             else:
