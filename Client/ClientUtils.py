@@ -6,7 +6,7 @@ import sys
 import imaplib
 import re
 from typing import Literal, Union
-from multipledispatch import dispatch
+#from multipledispatch import dispatch
 
 class ClientUtils:
     def __init__(self, smtp_server, smtp_port, imap_server, imap_port, username, password):
@@ -59,7 +59,7 @@ class ClientUtils:
         self.imap.logout() # Logging out of the IMAP server
         self.eprint(f"Disconnected from IMAP server {self.imap_server}:{self.imap_port}")
 
-    @dispatch(str, str, str)
+    #@dispatch(str, str, str)
     def send_mail(self, to_address: str, subject: str, body: str, cc: str=None, bcc: str=None):
         '''Sends an email to the specified address with the specified subject and body'''
         msg = EmailMessage()
@@ -75,12 +75,13 @@ class ClientUtils:
         self.smtp.send_message(msg) # Sending the email
         self.eprint(f"Sent email to {to_address}")
 
+    '''
     @dispatch(EmailMessage)
     def send_mail(self, msg: EmailMessage):
-        '''Sends an email with an EmailMessage object'''
+        Sends an email with an EmailMessage object
         self.smtp.send_message(msg) # Sending the email
         self.eprint(f"Sent email to {msg['To']}")
-
+    '''
     def reply_mail(self, email: EmailMessage, body: str, quoting: Union[Literal['prepend', 'append'], None] = 'prepend') -> EmailMessage:
         '''Replies to an email with the specified body'''
         msg = EmailMessage()
