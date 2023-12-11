@@ -2,7 +2,6 @@ import smtplib
 from email.message import EmailMessage
 from email.header import decode_header, make_header
 import email
-import json
 import sys
 import imaplib
 import re
@@ -98,7 +97,7 @@ class ClientUtils:
         msg['CC'] = email["CC"]
         msg['In-Reply-To'] = email["Message-ID"]
         self.smtp.send_message(msg)
-        self.eprint(f"Sent email reply to {email["From"]}")
+        self.eprint(f"Sent email reply to {email['From']}")
         
     
     def get_mail(self, mailbox: str="INBOX", filter: str="UNSEEN") -> list[EmailMessage]:
@@ -165,7 +164,7 @@ class ClientUtils:
 
     '''
     The layout for creds.json is as follows:
-   {
+    {
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
         "imap_server": "imap.gmail.com",
