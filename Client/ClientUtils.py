@@ -8,8 +8,6 @@ import re
 from typing import Literal, Union
 from multipledispatch import dispatch
 
-
-
 class ClientUtils:
     def __init__(self, smtp_server, smtp_port, imap_server, imap_port, username, password):
         '''Initializes the client utils class with the specified SMTP server, port, username, and password'''
@@ -101,6 +99,18 @@ class ClientUtils:
         self.eprint(f"Sent email reply to {email['From']}")
         
     
+
+    def connect_imap(self):
+        '''Connects to the IMAP server'''
+        self.imap_connection = imaplib.IMAP4_SSL(self.smtp_server) # Assuming the IMAP server is the same as SMTP
+        self.imap_connection.login(self.username, self.password)
+        self.eprint("Connected to IMAP server")
+
+    def disconnect_imap(self):
+        '''Logs out and disconnects from the IMAP server'''
+        self.imap_connection.logout()
+        self.eprint("Disconnected from IMAP server")
+    
     def get_mail(self, mailbox: str="INBOX", filter: str="UNSEEN") -> list[EmailMessage]:
         '''Receives emails from the server and returns them as a list of EmailMessage objects
         filter is a string that can be used to filter the emails received. It is formatted as follows:
@@ -165,7 +175,6 @@ class ClientUtils:
             return [x.decode().split(' "/" ')[-1].replace('"', "") for x in self.imap.list()[1] if "\\Noselect" not in x.decode()]
         else:
             return []
-
     '''
     The layout for creds.json is as follows:
     {
@@ -178,4 +187,4 @@ class ClientUtils:
     }
 
     This is for gmail specifically, but the same format can be used for other servers
-    '''
+    '''   
