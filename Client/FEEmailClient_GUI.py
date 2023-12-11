@@ -5,17 +5,13 @@ import json
 import html
 import html2text
 
-
-
-
-
 class GUIApp():
     def __init__(self):
-        app = Tk()
-        app.title('FEE-MAIL')
-        app.geometry("1000x600")
-        tabControl = ttk.Notebook(app)
-        with open('Client/creds.json') as f:
+        app = Tk() # Create the window
+        app.title('FEE-MAIL') # Change the title
+        app.geometry("1000x600") # Change the size
+        tabControl = ttk.Notebook(app) # Create Tab Control
+        with open('Client/creds.json') as f: # Load the credentials
             creds = json.load(f)
         smtp_server = creds['smtp_server']
         smtp_port =  creds['smtp_port']
@@ -23,21 +19,21 @@ class GUIApp():
         imap_port = creds['imap_port']
         username = creds['username']
         password = creds['password']
-        self.cu = ClientUtils(smtp_server=smtp_server, smtp_port=smtp_port, imap_server=imap_server, imap_port=imap_port, username=username, password=password)
-        self.current_mailbox = None
-        self.cu.connect()
-        self.send_tab = ttk.Frame(tabControl)
-        tabControl.add(self.send_tab, text='Send Email')
-        self.inbox_tab = ttk.Frame(tabControl)
+        self.cu = ClientUtils(smtp_server=smtp_server, smtp_port=smtp_port, imap_server=imap_server, imap_port=imap_port, username=username, password=password) # Create the ClientUtils object
+        self.current_mailbox = None # Initialize the current mailbox
+        self.cu.connect() # Connect to the server and login
+        self.send_tab = ttk.Frame(tabControl) # Create the send tab
+        tabControl.add(self.send_tab, text='Send Email') 
+        self.inbox_tab = ttk.Frame(tabControl) # Create the inbox tab
         tabControl.add(self.inbox_tab, text='Inbox')
         tabControl.pack(expand=1, fill="both")
-        self.to_address = StringVar()
-        self.subject = StringVar()
+        self.to_address = StringVar() # Initialize the variables
+        self.subject = StringVar() 
         self.body = StringVar()
-        self.emails = []
+        self.emails = [] # Initialize the emails
 
-        Label(self.send_tab, text='Send To:').grid(row=0, column=0, sticky=W)
-        Entry(self.send_tab, textvariable=self.to_address).grid(row=0, column=1, sticky=(W, E))
+        Label(self.send_tab, text='Send To:').grid(row=0, column=0, sticky=W) # Add the labels and entries to the send tab
+        Entry(self.send_tab, textvariable=self.to_address).grid(row=0, column=1, sticky=(W, E)) 
         Label(self.send_tab, text='Subject:').grid(row=1, column=0, sticky=W)
         Entry(self.send_tab, textvariable=self.subject).grid(row=1, column=1, sticky=(W, E))
         Label(self.send_tab, text='Message:').grid(row=2, column=0, sticky=W)
@@ -52,6 +48,11 @@ class GUIApp():
         self.listbox = Listbox(self.inbox_tab, listvariable=self.email_list, height=20)
         self.listbox.grid(row=1, column=0, columnspan=2, sticky=(W, E), padx=5, pady=5)
 
+        self.current_mailbox = ttk.Combobox(self.inbox_tab, values=self.cu.list_mailboxes(), state='readonly')
+        self.current_mailbox.grid(row=0, column=1, sticky=E)
+        self.current_mailbox.set("INBOX")
+
+
         # Email reading section
         self.email_content = Text(self.inbox_tab, state='disabled', wrap='word')
         self.email_content.grid(row=1, column=2, sticky=(N, S, E, W), padx=5, pady=5)
@@ -61,7 +62,6 @@ class GUIApp():
 
         # Bind the Listbox select event to the showEmailContent function
         self.listbox.bind('<<ListboxSelect>>', self.showEmailContent)
-
         Button(self.inbox_tab, text='Refresh Inbox', command=self.fetchEmails).grid(row=2, column=0, sticky=W, padx=5, pady=10)
         app.mainloop()
 
@@ -119,7 +119,7 @@ class GUIApp():
 
     def fetchEmails(self):
         try:
-            self.emails = self.cu.get_mail(mailbox='INBOX', filter="unseen")
+            self.emails = self.cu.get_mail(mailbox=self.current_mailbox.get(), filter="", limit=15)
             email_subjects = [email['Subject'] for email in self.emails if email['Subject'] is not None]
             self.email_list.set(email_subjects)
         except Exception as e:
