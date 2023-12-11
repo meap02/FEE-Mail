@@ -37,16 +37,17 @@ class ClientUtils:
         self.eprint(f"Connected to {self.smtp_server}:{self.smtp_port}")
         # The following is for testing with Gmail server, will not be used with our server
         #'''
-        self.smtp.starttls()
-        self.smtp.login(self.username, self.password)
+        #self.smtp.starttls()
+        #self.smtp.login(self.username, self.password)
         #'''
-        self.eprint(f"Logged in as {self.username}")
+        #self.eprint(f"Logged in as {self.username}")
 
         # Setting up IMAP connection to receive emails
         
-        self.imap = imaplib.IMAP4_SSL(host=self.imap_server, port=self.imap_port)
-        self.imap.login(self.username, self.password)
-        self.eprint(f"Connected to IMAP server {self.imap_server}:{self.imap_port}")
+        if self.imap_port != '' and self.imap_server != '':
+            self.imap = imaplib.IMAP4_SSL(host=self.imap_server, port=self.imap_port)
+            self.imap.login(self.username, self.password)
+            self.eprint(f"Connected to IMAP server {self.imap_server}:{self.imap_port}")
 
 
     def disconnect(self):
@@ -106,61 +107,64 @@ class ClientUtils:
         "FILTER1 FILTER2 FILTER3"  "FILTER4=VALUE1 FILTER5=VALUE2"
         Valid filters are: ALL, UNSEEN, SEEN, ANSWERED, UNANSWERED, DELETED, UNDELETED, DRAFT, UNDRAFT, FLAGGED, UNFLAGGED, RECENT, OLD, NEW
         Valid value filters are: BEFORE, ON, SINCE, SUBJECT, BODY, TEXT, FROM, TO, CC, BCC'''
-
-        valid_filters = ["ALL", "UNSEEN", "SEEN", "ANSWERED", "UNANSWERED", "DELETED", "UNDELETED", "DRAFT", "UNDRAFT", "FLAGGED", "UNFLAGGED", "RECENT", "OLD", "NEW"]
-        valid_value_filters = ["BEFORE", "ON", "SINCE", "SUBJECT", "BODY", "TEXT", "FROM", "TO", "CC", "BCC"]
-        # Dates to be formatted as dd MMM yyyy HH:mm:ss Z
-        self.imap.select(mailbox) # Note that this mailbox must be kept track of by the interface
-        search_string = "(ALL "
-        filter_list = re.split(r'\s(?=(?:[^\'\"`]*([\'\"`])[^\'\"`]*\1)*[^\'\"`]*$)', filter)
-        for i in range(len(filter_list)-1): # This is to handle the case where there are multiple filters
-            if '=' in filter_list[i]: # This is to handle the case where there is a value filter
-                filter_list[i] = filter_list[i].split('=') # Splitting the filter into the filter and the value
-                filter_list[i][0] = filter_list[i][0].upper() # Making the filter uppercase
-                if filter_list[i][0] in valid_value_filters: # Checking if the filter is valid
-                    search_string += f"({filter_list[i][0]} {filter_list[i][1]}) " # Adding the filter to the search string
-                else:
-                    self.eprint("Invalid filter: " + filter_list[i][0])
-            else: # This is to handle the case where there is no value filter
-                filter_list[i] = filter_list[i].upper() # Making the filter uppercase
-                if filter_list[i] in valid_filters: # Checking if the filter is valid
-                    search_string += f"({filter_list[i]}) " # Adding the filter to the search string
-                else:
-                    self.eprint("Invalid filter: " + filter_list[i])
-        if '=' in filter_list[-1]: # Repeat of the previous code, but for the last filter
-                filter_list[-1] = filter_list[-1].split('=')
-                filter_list[-1][0] = filter_list[-1][0].upper()
-                if filter_list[-1][0] in valid_value_filters:
-                    search_string += f"({filter_list[-1][0]} {filter_list[-1][1]})" # Note that there is no space after the last filter
-                else:
-                    self.eprint("Invalid filter: " + filter_list[-1][0])
-        else:
-            filter_list[-1] = filter_list[-1].upper()
-            if filter_list[-1] in valid_filters:
-                search_string += f"({filter_list[-1]})" # Note that there is no space after the last filter
+        if self.imap: # Checking if the IMAP connection exists
+            valid_filters = ["ALL", "UNSEEN", "SEEN", "ANSWERED", "UNANSWERED", "DELETED", "UNDELETED", "DRAFT", "UNDRAFT", "FLAGGED", "UNFLAGGED", "RECENT", "OLD", "NEW"]
+            valid_value_filters = ["BEFORE", "ON", "SINCE", "SUBJECT", "BODY", "TEXT", "FROM", "TO", "CC", "BCC"]
+            # Dates to be formatted as dd MMM yyyy HH:mm:ss Z
+            self.imap.select(mailbox) # Note that this mailbox must be kept track of by the interface
+            search_string = "(ALL "
+            filter_list = re.split(r'\s(?=(?:[^\'\"`]*([\'\"`])[^\'\"`]*\1)*[^\'\"`]*$)', filter)
+            for i in range(len(filter_list)-1): # This is to handle the case where there are multiple filters
+                if '=' in filter_list[i]: # This is to handle the case where there is a value filter
+                    filter_list[i] = filter_list[i].split('=') # Splitting the filter into the filter and the value
+                    filter_list[i][0] = filter_list[i][0].upper() # Making the filter uppercase
+                    if filter_list[i][0] in valid_value_filters: # Checking if the filter is valid
+                        search_string += f"({filter_list[i][0]} {filter_list[i][1]}) " # Adding the filter to the search string
+                    else:
+                        self.eprint("Invalid filter: " + filter_list[i][0])
+                else: # This is to handle the case where there is no value filter
+                    filter_list[i] = filter_list[i].upper() # Making the filter uppercase
+                    if filter_list[i] in valid_filters: # Checking if the filter is valid
+                        search_string += f"({filter_list[i]}) " # Adding the filter to the search string
+                    else:
+                        self.eprint("Invalid filter: " + filter_list[i])
+            if '=' in filter_list[-1]: # Repeat of the previous code, but for the last filter
+                    filter_list[-1] = filter_list[-1].split('=')
+                    filter_list[-1][0] = filter_list[-1][0].upper()
+                    if filter_list[-1][0] in valid_value_filters:
+                        search_string += f"({filter_list[-1][0]} {filter_list[-1][1]})" # Note that there is no space after the last filter
+                    else:
+                        self.eprint("Invalid filter: " + filter_list[-1][0])
             else:
-                self.eprint("Invalid filter: " + filter_list[-1])
-        search_string += ")" # Closing the search string
-        typ, data = self.imap.search(None, search_string) # Searching for the emails
-        if typ == 'OK': # Checking if the search was successful
-            email_list = []
-            for num in data[0].split():
-                typ, data = self.imap.fetch(num, '(RFC822)') # Fetching the email
-                if typ == 'OK': # Checking if the fetch was successful
-                    toadd = email.message_from_bytes(data[0][1])
-                    if "=?UTF-8?" in toadd["Subject"]:
-                        toadd["Subject"] = self.decode_mime_words(toadd["Subject"])
-                    email_list.append(toadd) # Adding the email to the list
+                filter_list[-1] = filter_list[-1].upper()
+                if filter_list[-1] in valid_filters:
+                    search_string += f"({filter_list[-1]})" # Note that there is no space after the last filter
                 else:
-                    self.eprint(f"Error fetching mail with search string {search_string} with error code {typ}")
-        else:
-            self.eprint(f"Error searching for mailbox for {filter} with error code {typ}")
+                    self.eprint("Invalid filter: " + filter_list[-1])
+            search_string += ")" # Closing the search string
+            typ, data = self.imap.search(None, search_string) # Searching for the emails
+            if typ == 'OK': # Checking if the search was successful
+                email_list = []
+                for num in data[0].split():
+                    typ, data = self.imap.fetch(num, '(RFC822)') # Fetching the email
+                    if typ == 'OK': # Checking if the fetch was successful
+                        toadd = email.message_from_bytes(data[0][1])
+                        if "=?UTF-8?" in toadd["Subject"]:
+                            toadd["Subject"] = self.decode_mime_words(toadd["Subject"])
+                        email_list.append(toadd) # Adding the email to the list
+                    else:
+                        self.eprint(f"Error fetching mail with search string {search_string} with error code {typ}")
+            else:
+                self.eprint(f"Error searching for mailbox for {filter} with error code {typ}")
         return email_list # Returning the list of emails
 
 
     def list_mailboxes(self):
         '''Lists all mailboxes'''
-        return [x.decode().split(' "/" ')[-1].replace('"', "") for x in self.imap.list()[1] if "\\Noselect" not in x.decode()]
+        if self.imap: # Checking if the IMAP connection exists
+            return [x.decode().split(' "/" ')[-1].replace('"', "") for x in self.imap.list()[1] if "\\Noselect" not in x.decode()]
+        else:
+            return []
 
     '''
     The layout for creds.json is as follows:
