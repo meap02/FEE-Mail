@@ -105,10 +105,14 @@ class GUIApp():
                 email_body = selected_email.get_payload(decode=True).decode()
 
             # Convert HTML to plain text if email_body is not None
+
+            # Initialize the plain text variable with the email details
+            plain_text = "From: " + selected_email['From'] + "\n" + "To: " + selected_email['To'] + "\n" + "Subject: " + selected_email['Subject'] + "\n" + "Date: " + selected_email['Date'] + "\n\n"
+
             if email_body is not None:
-                plain_text = html2text.html2text(email_body)
+                plain_text += html2text.html2text(email_body)
             else:
-                plain_text = "This email has no text content."
+                plain_text += "This email has no text content."
 
             # Insert the plain text into the Text widget
             self.email_content.insert('1.0', plain_text)
