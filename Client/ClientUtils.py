@@ -35,10 +35,10 @@ class ClientUtils:
         self.eprint(f"Connected to {self.smtp_server}:{self.smtp_port}")
         # The following is for testing with Gmail server, will not be used with our server
         #'''
-        #self.smtp.starttls()
-        #self.smtp.login(self.username, self.password)
+        self.smtp.starttls()
+        self.smtp.login(self.username, self.password)
         #'''
-        #self.eprint(f"Logged in as {self.username}")
+        self.eprint(f"Logged in as {self.username}")
 
         # Setting up IMAP connection to receive emails
         
