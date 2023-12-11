@@ -10,7 +10,7 @@ class GUIApp():
         app = Tk() # Create the window
         app.title('FEE-MAIL') # Change the title
         app.geometry("1000x600") # Change the size
-        tabControl = ttk.Notebook(app) # Create Tab Control
+        self.tabControl = ttk.Notebook(app) # Create Tab Control
         with open('Client/creds.json') as f: # Load the credentials
             creds = json.load(f)
         smtp_server = creds['smtp_server']
@@ -22,11 +22,11 @@ class GUIApp():
         self.cu = ClientUtils(smtp_server=smtp_server, smtp_port=smtp_port, imap_server=imap_server, imap_port=imap_port, username=username, password=password) # Create the ClientUtils object
         self.current_mailbox = None # Initialize the current mailbox
         self.cu.connect() # Connect to the server and login
-        self.send_tab = ttk.Frame(tabControl) # Create the send tab
-        tabControl.add(self.send_tab, text='Send Email') 
-        self.inbox_tab = ttk.Frame(tabControl) # Create the inbox tab
-        tabControl.add(self.inbox_tab, text='Inbox')
-        tabControl.pack(expand=1, fill="both")
+        self.send_tab = ttk.Frame(self.tabControl) # Create the send tab
+        self.tabControl.add(self.send_tab, text='Send Email') 
+        self.inbox_tab = ttk.Frame(self.tabControl) # Create the inbox tab
+        self.tabControl.add(self.inbox_tab, text='Inbox')
+        self.tabControl.pack(expand=1, fill="both")
         self.to_address = StringVar() # Initialize the variables
         self.subject = StringVar() 
         self.body = StringVar()
@@ -41,6 +41,7 @@ class GUIApp():
         self.bodyEntry.grid(row=2, column=1, sticky=(W, E), pady=5)
 
         Button(self.send_tab, text='Send', command=self.sendEmail).grid(row=3, column=1, pady=10, sticky=E)
+        Button(self.inbox_tab, text='Reply', command=self.replyEmail).grid(row=2, column=1, sticky=E, padx=5, pady=10)
 
         # Email listing section on Inbox Tab
         self.email_list = StringVar(value=[])
@@ -65,11 +66,22 @@ class GUIApp():
         Button(self.inbox_tab, text='Refresh Inbox', command=self.fetchEmails).grid(row=2, column=0, sticky=W, padx=5, pady=10)
         app.mainloop()
 
+    def replyEmail(self):
+        if self.listbox.curselection():
+            index = self.listbox.curselection()[0]
+            email = self.emails[index]
+            self.tabControl.select(self.send_tab)
+            self.to_address.set(email['From'])
+            self.subject.set("Re: " + email['Subject'])
+        
+        
+        
+
     def sendEmail(self):
         address = self.to_address.get()
         subj = self.subject.get()
         input_body = self.bodyEntry.get("1.0", "end")
-        self.cu.send_email(to_address=address, subject=subj, body=input_body)
+        self.cu.send_mail(to_address=address, subject=subj, body=input_body)
         messagebox.showinfo("Email", f"Email sent to {address}")
         self.to_address.set("")
         self.subject.set("")
